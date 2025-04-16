@@ -1,0 +1,12 @@
+# Игнорировать папку сборки CMake
+cmake-build-debug/
+
+# Игнорировать файлы сборки CMake
+CMakeCache.txt
+CMakeFiles/
+CMakeScripts/
+Makefile
+cmake_install.cmake
+
+# Игнорировать папку настроек JetBrains IDE
+.idea/

@@ -1,8 +1,8 @@
 # Игнорировать папку сборки CMake
 cmake-build-debug/
+cmake-build-release/
 
 # Игнорировать файлы сборки CMake
-CMakeCache.txt
 CMakeFiles/
 CMakeScripts/
 Makefile

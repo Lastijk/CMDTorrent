@@ -13,3 +13,4 @@ struct TorrentFile {
     std::string infoHash;
 };
 
+TorrentFile LoadTorrentFile(const std::string& filename);

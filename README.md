@@ -4,3 +4,5 @@ Right now the project has:
 - TorrentFile.cpp - LoadTorrentFile parses requested .torrent file and puts data in a TorrentFile struct.
 - TorrentTracker.cpp - Collects and updates peers, can return them if needed
 - TCP_Connect.cpp - Connects to a peer, can send and receive data via respective functions
+
+The work is still on, many things done, I just want to polish the project and release a full working app.

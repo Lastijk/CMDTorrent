@@ -1,6 +1,109 @@
-CMDTorrent is a command line torrent tracker I`m currently working on.
-Right now the project has:
-- Bencode namespace - A parser of bencoded metadata, useful to decode a torrent file or message. Construct BencodeParser with your data(std::string) and method ParseAny will return your decoded data in std::string. ComputeSHA1 is a helpful method if you`re parsing an actual .torrent file, it returns SHA1 hash of its "info" value.
-- TorrentFile.cpp - LoadTorrentFile parses requested .torrent file and puts data in a TorrentFile struct.
-- TorrentTracker.cpp - Collects and updates peers, can return them if needed
-- TCP_Connect.cpp - Connects to a peer, can send and receive data via respective functions
+# Torrent Client CLI (C++)
+
+Учебный CLI-клиент BitTorrent на C++, который:
+- читает `.torrent` файл;
+- получает список пиров у трекера;
+- подключается к пирам по TCP;
+- скачивает первые `N%` частей файла;
+- сохраняет их в выходной файл с правильными смещениями;
+- проходит проверку целостности первых частей по SHA1.
+
+Проект сделан в рамках учебного задания, без использования готовых торрент-клиентов и сторонних реализаций парсера `.torrent`.
+
+## Возможности
+
+- CLI-интерфейс:
+  - `-d <dir>`: директория для сохранения скачиваемого файла;
+  - `-p <percent>`: сколько процентов частей скачать, начиная с нулевой;
+  - `<path/to/file.torrent>`: путь к торрент-файлу.
+- Многопоточная загрузка от нескольких пиров.
+- Поддержка протокольных сообщений BitTorrent (`handshake`, `bitfield`, `interested`, `request`, `piece`, `have`).
+- Проверка хеша скачанных частей (через `checksum.py`).
+
+## Требования
+
+- C++17-компилятор (`g++`/`clang++`);
+- CMake `>= 3.16`;
+- OpenSSL (для SHA1);
+- Python 3 + `torrent_parser` (для проверочного скрипта);
+- CPR (HTTP клиент для запроса к трекеру):
+  - если установлен системно, будет использован он;
+  - если нет, CMake подтянет `libcpr` через `FetchContent` (нужны `git` и интернет при первой конфигурации).
+
+## Сборка
+
+Из корня репозитория:
+
+```bash
+make compile
+```
+
+или вручную:
+
+```bash
+cmake -S torrent-client-prototype -B cmake-build
+cmake --build cmake-build
+```
+
+## Запуск
+
+Формат:
+
+```bash
+./cmake-build/torrent-client-prototype -d <download_dir> -p <percent> <torrent_file>
+```
+
+Пример:
+
+```bash
+./cmake-build/torrent-client-prototype -d /tmp/downloads -p 5 resources/debian.iso.torrent
+```
+
+## Автопроверка (локально)
+
+```bash
+make run
+```
+
+Что делает `make run`:
+1. собирает бинарник;
+2. устанавливает Python-зависимости из `requirements.txt`;
+3. запускает `check_script.sh`, который проверяет SHA1 первых `p%` частей через `checksum.py`.
+
+## Примечания
+
+- Количество частей для загрузки считается как `floor(total_pieces * p / 100)`.
+- Для `p=2` и `1552` частей будет скачано `31` часть (`0..30`).
+- Проверка в скрипте ожидает именно первые части, поэтому очередь загрузки ограничена диапазоном `0..N-1`.
+
+## Структура
+
+- `torrent-client-prototype/` — основной C++ код клиента;
+- `checksum.py` — проверка целостности первых частей;
+- `check_script.sh` — интеграционный прогон;
+- `Makefile` — команды сборки/запуска из корня задания.
+
+## Ограничения проекта
+
+- Реализован учебный прототип, а не production-ready торрент-клиент.
+- Акцент на корректной загрузке и валидации первых `N%` частей для тестовой системы.
+### Интерфейс командной строки для торрент-клиента
+
+Настало время для того, чтобы дать нашему торрент-клиенту пользовательский интерфейс.
+Одним из распространенных типов интерфейсов является CLI -- Command Line Interface.
+Программы, взаимодействующие с пользователем через CLI, запускаются из shell'а (командной строки).
+Удобство CLI заключается в возможности вызова программы из скриптов, из других программ или из терминала при подключении к удаленному серверу.
+
+В данном задании требуется, воспользовавшись тем кодом, который был написан в предыдущих заданиях, написать cmake-проект `torrent-client-prototype` и положить его в соответствующей директории.
+Вы можете редактировать и размещать любые файлы в директории `torrent-client-prototype`.
+Использовать можно только свой код.
+Запрещается использовать готовые реализации торрент-клиентов, либо библиотек для работы с торрент-файлами.
+Важно, чтобы ваш проект собирался с помощью команды, размещенной в файле `Makefile` в корневой директории текущего задания.
+
+Собранная по вашему проекту программа должна запускаться так:
+`./torrent-client-prototype -d <путь к директории для сохранения скачанного файла> -p <сколько процентов от файла надо скачать> <путь к torrent-файлу>`
+
+Параметр `-p` нужен для того, чтобы не скачивать большой файл в тестовой системе, а загрузить лишь первые несколько процентов от всего количества частей файла, начиная с первой части.
+Например, если программа была вызвана так:
+`./torrent-client-prototype -p /tmp/downloads/super_papka -p 5 resources/cool_file.torrent`,
+и, допустим, что скаичваемый файл разбит на 1432 части, то программе нужно будет скачать всего 71 часть, с нулевой по 70 включительно.
